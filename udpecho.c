@@ -41,6 +41,33 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "fsl_pit.h"
+#include "fsl_dac.h"
+
+#define PACKET_SIZE 500
+#define PACKET_COMPARISON 2
+
+uint8_t counter = 0;
+uint16_t ping_buffer[PACKET_SIZE] = {2048};
+uint16_t pong_buffer[PACKET_SIZE] = {2048};
+uint8_t array_counter = 0;
+
+bool pit_flag = false;
+
+void PIT0_IRQHandler()
+{
+	PIT_ClearStatusFlags(PIT, kPIT_Chnl_0, kPIT_TimerFlag);
+	if(true == pit_flag)
+	{
+		DAC_SetBufferValue(DAC0, 0U,(ping_buffer[counter]));
+	}
+	else
+	{
+		DAC_SetBufferValue(DAC0, 0U,(pong_buffer[counter]));
+	}
+
+	counter = (counter < (PACKET_SIZE - PACKET_COMPARISON)) ? counter + 1 : 0;
+}
 
 static void
 server_thread(void *arg)
@@ -51,7 +78,7 @@ server_thread(void *arg)
 	char *msg;
 	uint16_t *data;
 
-	TickType_t last_tick = 0;
+//	TickType_t last_tick = 0;
 
 	uint16_t len;
 
@@ -63,8 +90,21 @@ server_thread(void *arg)
 	while (1)
 	{
 		netconn_recv(conn, &buf);
-		netbuf_data(buf, (void**)&data, &len);
+//		netbuf_data(buf, (void**)&data, &len);
+		if(false == pit_flag)
+		{
+			pit_flag = true;
+			counter = 0;
+			netbuf_copy(buf, ping_buffer, sizeof(ping_buffer));
+		}
+		else
+		{
+			pit_flag = false;
+			counter = 0;
+			netbuf_copy(buf, pong_buffer, sizeof(pong_buffer));
+		}
 		netbuf_delete(buf);
+		PIT_StartTimer(PIT, kPIT_Chnl_0);
 
 	}
 }
