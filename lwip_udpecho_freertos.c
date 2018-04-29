@@ -44,6 +44,8 @@
 #include "lwip/tcpip.h"
 #include "netif/ethernet.h"
 #include "ethernetif.h"
+#include "fsl_pit.h"
+#include "fsl_dac.h"
 
 #include "board.h"
 
@@ -57,7 +59,7 @@
 /* IP address configuration. */
 #define configIP_ADDR0 192
 #define configIP_ADDR1 168
-#define configIP_ADDR2 0
+#define configIP_ADDR2 100
 #define configIP_ADDR3 103
 
 /* Netmask configuration. */
@@ -69,7 +71,7 @@
 /* Gateway address configuration. */
 #define configGW_ADDR0 192
 #define configGW_ADDR1 168
-#define configGW_ADDR2 0
+#define configGW_ADDR2 100
 #define configGW_ADDR3 1
 
 /* MAC address configuration. */
@@ -152,6 +154,16 @@ int main(void)
     /* Disable SYSMPU. */
     base->CESR &= ~SYSMPU_CESR_VLD_MASK;
 
+    pit_config_t Pit_Config;
+    PIT_GetDefaultConfig(&Pit_Config);
+    PIT_Init(PIT, &Pit_Config);
+
+    PIT_EnableInterrupts(PIT, kPIT_Chnl_0, kPIT_TimerInterruptEnable);
+    EnableIRQ(PIT0_IRQn);
+
+    PIT_SetTimerPeriod(PIT, kPIT_Chnl_0, USEC_TO_COUNT(80, CLOCK_GetFreq(kCLOCK_BusClk)));
+    Dac_init();
+
     /* Initialize lwIP from thread */
     if(sys_thread_new("main", stack_init, NULL, INIT_THREAD_STACKSIZE, INIT_THREAD_PRIO) == NULL)
         LWIP_ASSERT("main(): Task creation failed.", 0);
@@ -161,4 +173,13 @@ int main(void)
     /* Will not get here unless a task calls vTaskEndScheduler ()*/
     return 0;
 }
+
+void Dac_init()
+{
+	dac_config_t Dac_Config;
+	DAC_GetDefaultConfig(&Dac_Config);
+	DAC_Init(DAC0, &Dac_Config);
+	DAC_Enable(DAC0, true);
+}
+
 #endif
