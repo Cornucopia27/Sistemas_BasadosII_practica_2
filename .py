@@ -2,6 +2,7 @@ import wave, struct
 import socket
 import soundfile as sf
 import numpy as np
+import time
 
 UDP_IP = "192.168.0.103"
 #UDP_IP2 = "192.168.0.106"
@@ -12,43 +13,49 @@ MESSAGE = "Hello World!"
 print "UDP target IP:", UDP_IP
 print "UDP target port:", UDP_PORT
 print "message:", MESSAGE
-Ns = 14088
+SIZE = 500
+Ns = SIZE
 Ms = 0
-Nsl = 14000;
+Nsl = 0
+
 
 data, samplerate = sf.read('C:/Users/ALEX/Documents/test_song.wav') 
-#print data[100000:100001]
-data0 = data[:,0]
-#print(len(data0))
-#print data0[100000]
-newdata = data0[0::10]
+
+data = (data[:,0] + data[:,1])/2
+SongDuration = len(data)/(samplerate)
+TimeToSleep = float(Ns)/(samplerate/4)
+print(samplerate/4)
+print(Ns)
+print(SongDuration)
+print(TimeToSleep)
+#print data[10000:10010]
+newdata = data[0::4]
+NewSongDuration = (len(newdata)/float(Ns))*(TimeToSleep)
+print(NewSongDuration)
+#print data[4000:4010]
 #print(len(newdata))
-#print newdata[10000:10005]
-newdata = 32797*newdata
-#print newdata[10000:10005]
+newdata =2048*newdata
+
+newdata = newdata+2048
+
 newdata = np.cast[np.uint16](newdata)
-#print newdata[10000:10005]
-
-trydata = newdata[14000:14001]
-print trydata
-
+#print newdata[14000:14005]
 sock = socket.socket(socket.AF_INET, # Internet
-                    socket.SOCK_DGRAM) # UDP
-sock.connect((UDP_IP, UDP_PORT))
-sock.sendto(newdata[Nsl:Ns], (UDP_IP, UDP_PORT))
+                     socket.SOCK_DGRAM) # UDP
 
 
-#while True:
-#    for i in range(len(newdata)):
-        #sock = socket.socket(socket.AF_INET, # Internet
-        #                     socket.SOCK_DGRAM) # UDP
-        #sock.connect((UDP_IP, UDP_PORT))
-        #sock.sendto(newdata[Nsl:Ns], (UDP_IP, UDP_PORT))
-        #print newdata[Nsl:Ns]
-#        Nsl = Nsl + 48
-#        Ns = Ns + 48
-#        Ms = Ms + 1
+while True:
+    for i in range(len(newdata)):
         
+        sock.sendto(newdata[Nsl:Ns], (UDP_IP, UDP_PORT))
+        print newdata[Nsl:Ns]
+        Nsl = Nsl + SIZE
+        Ns = Ns + SIZE
+        Ms = Ms + 1
+        time.sleep((TimeToSleep-.0020))
+        if(len(newdata) < Ns):
+            Nsl = 0
+            Ns = SIZE
 #socks = socket.socket(socket.AF_INET, # Internet
 #                    socket.SOCK_STREAM) # UDP
 #socks.connect((UDP_IP2, UDP_PORT2))

@@ -59,7 +59,7 @@
 /* IP address configuration. */
 #define configIP_ADDR0 192
 #define configIP_ADDR1 168
-#define configIP_ADDR2 100
+#define configIP_ADDR2 0
 #define configIP_ADDR3 103
 
 /* Netmask configuration. */
@@ -71,7 +71,7 @@
 /* Gateway address configuration. */
 #define configGW_ADDR0 192
 #define configGW_ADDR1 168
-#define configGW_ADDR2 100
+#define configGW_ADDR2 0
 #define configGW_ADDR3 1
 
 /* MAC address configuration. */
@@ -161,7 +161,7 @@ int main(void)
     PIT_EnableInterrupts(PIT, kPIT_Chnl_0, kPIT_TimerInterruptEnable);
     EnableIRQ(PIT0_IRQn);
 
-    PIT_SetTimerPeriod(PIT, kPIT_Chnl_0, USEC_TO_COUNT(80, CLOCK_GetFreq(kCLOCK_BusClk)));
+    PIT_SetTimerPeriod(PIT, kPIT_Chnl_0, USEC_TO_COUNT(91, CLOCK_GetFreq(kCLOCK_BusClk)));
     Dac_init();
 
     /* Initialize lwIP from thread */
