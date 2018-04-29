@@ -44,14 +44,15 @@
 #include "fsl_pit.h"
 #include "fsl_dac.h"
 
-#define PACKET_SIZE 500
+#define PACKET_SIZE 300
 #define PACKET_COMPARISON 2
 
-uint8_t counter = 0;
+volatile uint8_t counter = 500;
 uint16_t ping_buffer[PACKET_SIZE] = {2048};
 uint16_t pong_buffer[PACKET_SIZE] = {2048};
 uint8_t array_counter = 0;
 
+bool run_flag = true;
 bool pit_flag = false;
 
 void PIT0_IRQHandler()
@@ -65,8 +66,14 @@ void PIT0_IRQHandler()
 	{
 		DAC_SetBufferValue(DAC0, 0U,(pong_buffer[counter]));
 	}
-
-	counter = (counter < (PACKET_SIZE - PACKET_COMPARISON)) ? counter + 1 : 0;
+	if(counter < (PACKET_SIZE - PACKET_COMPARISON))
+	{
+		counter++;
+	}else
+	{
+		counter = 0;
+		run_flag = true;
+	}
 }
 
 static void
@@ -93,15 +100,23 @@ server_thread(void *arg)
 //		netbuf_data(buf, (void**)&data, &len);
 		if(false == pit_flag)
 		{
-			pit_flag = true;
-			counter = 0;
-			netbuf_copy(buf, ping_buffer, sizeof(ping_buffer));
+			if(run_flag = true)
+			{
+				pit_flag = true;
+				counter = 0;
+				netbuf_copy(buf, ping_buffer, sizeof(ping_buffer));
+				run_flag = false;
+			}
 		}
 		else
 		{
-			pit_flag = false;
-			counter = 0;
-			netbuf_copy(buf, pong_buffer, sizeof(pong_buffer));
+			if(run_flag = true)
+			{
+				pit_flag = false;
+				counter = 0;
+				netbuf_copy(buf, pong_buffer, sizeof(pong_buffer));
+				run_flag = false;
+			}
 		}
 		netbuf_delete(buf);
 		PIT_StartTimer(PIT, kPIT_Chnl_0);
