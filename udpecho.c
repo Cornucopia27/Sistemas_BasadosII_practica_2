@@ -47,6 +47,7 @@
 #define PACKET_SIZE 500
 #define PACKET_COMPARISON 2
 
+
 uint8_t counter = 0;
 uint16_t ping_buffer[PACKET_SIZE] = {2048};
 uint16_t pong_buffer[PACKET_SIZE] = {2048};
