@@ -29,91 +29,9 @@
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
+#ifndef LWIP_UDPECHO_H
+#define LWIP_UDPECHO_H
 
-#include "udpecho.h"
+void udpecho_init(void);
 
-#include "lwip/opt.h"
-
-#if LWIP_NETCONN
-
-#include "lwip/api.h"
-#include "lwip/sys.h"
-
-#include "FreeRTOS.h"
-#include "task.h"
-#include "fsl_pit.h"
-#include "fsl_dac.h"
-
-#define PACKET_SIZE 400
-#define PACKET_COMPARISON 2
-
-
-uint8_t counter = 0;
-uint16_t ping_buffer[PACKET_SIZE] = {2048};
-uint16_t pong_buffer[PACKET_SIZE] = {2048};
-uint8_t array_counter = 0;
-
-bool pit_flag = false;
-
-void PIT0_IRQHandler()
-{
-	PIT_ClearStatusFlags(PIT, kPIT_Chnl_0, kPIT_TimerFlag);
-	if(true == pit_flag)
-	{
-		DAC_SetBufferValue(DAC0, 0U,(ping_buffer[counter]));
-	}
-	else
-	{
-		DAC_SetBufferValue(DAC0, 0U,(pong_buffer[counter]));
-	}
-
-	counter = (counter < (PACKET_SIZE - PACKET_COMPARISON)) ? counter + 1 : 0;
-}
-
-static void
-server_thread(void *arg)
-{
-	struct netconn *conn;
-	struct netbuf *buf;
-
-	char *msg;
-	uint16_t *data;
-
-//	TickType_t last_tick = 0;
-
-	uint16_t len;
-
-	LWIP_UNUSED_ARG(arg);
-	conn = netconn_new(NETCONN_UDP);
-	netconn_bind(conn, IP_ADDR_ANY, 50005);
-	//LWIP_ERROR("udpecho: invalid conn", (conn != NULL), return;);
-
-	while (1)
-	{
-		netconn_recv(conn, &buf);
-//		netbuf_data(buf, (void**)&data, &len);
-		if(false == pit_flag)
-		{
-			pit_flag = true;
-			counter = 0;
-			netbuf_copy(buf, ping_buffer, sizeof(ping_buffer));
-		}
-		else
-		{
-			pit_flag = false;
-			counter = 0;
-			netbuf_copy(buf, pong_buffer, sizeof(pong_buffer));
-		}
-		netbuf_delete(buf);
-		PIT_StartTimer(PIT, kPIT_Chnl_0);
-
-	}
-}
-
-void
-udpecho_init(void)
-{
-	sys_thread_new("server", server_thread, NULL, 300, 2);
-}
-
-#endif /* LWIP_NETCONN */
+#endif /* LWIP_UDPECHO_H */

@@ -13,7 +13,7 @@ MESSAGE = "Hello World!"
 print "UDP target IP:", UDP_IP
 print "UDP target port:", UDP_PORT
 print "message:", MESSAGE
-SIZE = 500
+SIZE = 400
 Ns = SIZE
 Ms = 0
 Nsl = 0
@@ -23,20 +23,20 @@ data, samplerate = sf.read('C:/Users/ALEX/Documents/test_song.wav')
 
 data = (data[:,0] + data[:,1])/2
 SongDuration = len(data)/(samplerate)
-TimeToSleep = float(Ns)/(samplerate/4)
-print(samplerate/4)
+TimeToSleep = float(Ns)/(samplerate/2)
+print(samplerate/2)
 print(Ns)
 print(SongDuration)
 print(TimeToSleep)
 #print data[10000:10010]
-newdata = data[0::4]
+newdata = data[0::2]
 NewSongDuration = (len(newdata)/float(Ns))*(TimeToSleep)
 print(NewSongDuration)
 #print data[4000:4010]
 #print(len(newdata))
-newdata =2048*newdata
+newdata =1980*newdata
 
-newdata = newdata+2048
+newdata = newdata+1980
 
 newdata = np.cast[np.uint16](newdata)
 #print newdata[14000:14005]
@@ -45,17 +45,17 @@ sock = socket.socket(socket.AF_INET, # Internet
 
 
 while True:
-    for i in range(len(newdata)):
+    #for i in range(len(newdata)):
         
-        sock.sendto(newdata[Nsl:Ns], (UDP_IP, UDP_PORT))
-        print newdata[Nsl:Ns]
-        Nsl = Nsl + SIZE
-        Ns = Ns + SIZE
-        Ms = Ms + 1
-        time.sleep((TimeToSleep-.0020))
-        if(len(newdata) < Ns):
-            Nsl = 0
-            Ns = SIZE
+    sock.sendto(newdata[Nsl:Ns], (UDP_IP, UDP_PORT))
+    print newdata[Nsl:Ns]
+    Nsl = Nsl + SIZE
+    Ns = Ns + SIZE
+    Ms = Ms + 1
+    time.sleep((TimeToSleep-.0022))
+    if(len(newdata) < Ns):
+        Nsl = 0
+        Ns = SIZE
 #socks = socket.socket(socket.AF_INET, # Internet
 #                    socket.SOCK_STREAM) # UDP
 #socks.connect((UDP_IP2, UDP_PORT2))

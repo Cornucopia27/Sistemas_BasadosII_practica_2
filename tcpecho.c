@@ -32,6 +32,7 @@
 #include "tcpecho.h"
 
 #include "lwip/opt.h"
+#include "fsl_pit.h"
 
 #if LWIP_NETCONN
 
@@ -52,10 +53,10 @@ tcpecho_thread(void *arg)
   /* Bind connection to well known port number 7. */
 #if LWIP_IPV6
   conn = netconn_new(NETCONN_TCP_IPV6);
-  netconn_bind(conn, IP6_ADDR_ANY, 50007);
+  netconn_bind(conn, IP6_ADDR_ANY, 50017);
 #else /* LWIP_IPV6 */
   conn = netconn_new(NETCONN_TCP);
-  netconn_bind(conn, IP_ADDR_ANY, 50007);
+  netconn_bind(conn, IP_ADDR_ANY, 50017);
 #endif /* LWIP_IPV6 */
   LWIP_ERROR("tcpecho: invalid conn", (conn != NULL), return;);
 
@@ -96,9 +97,13 @@ tcpecho_thread(void *arg)
              {
              case PAUSAR:
             	 netconn_write(newconn, detener, len_det, NETCONN_COPY);
+            	 PIT_StopTimer(PIT, kPIT_Chnl_0);
+
             	 break;
              case REPRODUCIR:
             	 netconn_write(newconn, reproducir, len_rep, NETCONN_COPY);
+            	 PIT_StartTimer(PIT, kPIT_Chnl_0);
+
                  break;
 
              case ESTADISTICAS:
