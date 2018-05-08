@@ -30,7 +30,7 @@
  *
  */
 #include "tcpecho.h"
-
+#include "stdint.h"
 #include "lwip/opt.h"
 #include "fsl_pit.h"
 
@@ -41,7 +41,11 @@
 #define  PAUSAR			0x44 	//D
 #define  REPRODUCIR		0x52	//R
 #define  ESTADISTICAS	0x53	//S
+#define  PUERTO			0x50	//P
 /*-----------------------------------------------------------------------------------*/
+bool port_Flag  = false;
+char port[5];	/* Arreglo variable para guardar el puerto introducido por el usuario */
+
 static void 
 tcpecho_thread(void *arg)
 {
@@ -73,18 +77,23 @@ tcpecho_thread(void *arg)
       struct netbuf *buf;
       void *data;
       u16_t len;
-      char dummy[] = "Detener/Reproducir audio: [D] o [R] \r\n Seleccionar audio: [1] o [2] \r\n Desplegar estadisticas de la comincacion: [S]"; //120 caracteres
+      char dummy[] = "Detener/Reproducir audio: [D] o [R] \r\n Seleccionar puerto fuente de audio: [P] \r\n Desplegar estadisticas de la comunicacion: [S]"; //120 caracteres
       u16_t len_dummy = sizeof(dummy) ;
       netconn_write(newconn, dummy, len_dummy, NETCONN_COPY);		/* Enviar mensaje de menú principal */
 
-      char *detener = "Deteniendo el Audio";
-      u16_t len_det = 5 * sizeof(detener);
-      char *reproducir = "Reproduciendo el Audio";
-      u16_t len_rep = 6 * sizeof(detener);
+      char detener[] = "\r\nDeteniendo el Audio";
+      u16_t len_det = sizeof(detener);
+      char reproducir[] = "\r\nReproduciendo el Audio";
+      u16_t len_rep = sizeof(detener);
       char comp_data[1];
-      char estadisticas[] = "Mostrando estadisticas";
+      char estadisticas[] = "\r\nMostrando estadisticas";
       u16_t len_stat = sizeof(estadisticas);
+      char puerto[] = "\r\nEscribe el puerto (50000 en adelante):";
+      u16_t len_port = sizeof(puerto);
       
+
+
+    // BLOQUE DE RECEPCIÓN Y HANDLE DE DATOS INTRODUCIDOS POR EL USUARIO EN EL SOCKET CLIENTE DEL SMARTPHONE
       while ((err = netconn_recv(newconn, &buf)) == ERR_OK) {	//si recibe
         /*printf("Recved\n");*/
         do {
@@ -93,22 +102,34 @@ tcpecho_thread(void *arg)
 
              netbuf_copy(buf,comp_data,1); /* Copio el búfer recibido en mi arreglo de prueba */
 
+             if(true == port_Flag)
+             {
+            	 netbuf_copy(buf, port, 5);
+            	 netconn_write(newconn, port, 5, NETCONN_COPY);
+            	 port_Flag = false;
+             }
+
              switch(*comp_data)
              {
              case PAUSAR:
             	 netconn_write(newconn, detener, len_det, NETCONN_COPY);
             	 PIT_StopTimer(PIT, kPIT_Chnl_0);
-
             	 break;
+
              case REPRODUCIR:
             	 netconn_write(newconn, reproducir, len_rep, NETCONN_COPY);
             	 PIT_StartTimer(PIT, kPIT_Chnl_0);
-
                  break;
 
              case ESTADISTICAS:
             	 netconn_write(newconn, estadisticas, len_stat, NETCONN_COPY);
                  break;
+
+             case PUERTO:
+            	 netconn_write(newconn, puerto, len_port, NETCONN_COPY);
+            	 port_Flag = true;
+            	 break;
+
 
              }
 
@@ -134,5 +155,9 @@ tcpecho_init(void)
   sys_thread_new("tcpecho_thread", tcpecho_thread, NULL, DEFAULT_THREAD_STACKSIZE, DEFAULT_THREAD_PRIO);
 }
 /*-----------------------------------------------------------------------------------*/
-
+uint16_t get_Port()
+{
+	uint16_t casted_port = (uint16_t)*port;
+	return casted_port;
+}
 #endif /* LWIP_NETCONN */

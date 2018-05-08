@@ -29,10 +29,11 @@
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
-
+#include "stdint.h"
 #ifndef LWIP_TCPECHO_H
 #define LWIP_TCPECHO_H
 
 void tcpecho_init(void);
+uint16_t get_Port(void);
 
 #endif /* LWIP_TCPECHO_H */
